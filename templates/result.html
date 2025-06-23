@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>分析结果</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>分析结果</h1>
+
+        <div class="result-summary">
+            <p>您选择了标签：<strong>{{ tag }}</strong></p>
+            <p>分数区间：<strong>{{ rating_bin }}</strong></p>
+            <p>该标签在此分数区间的占比：<strong>{{ percentage }}%</strong></p>
+        </div>
+
+        <div class="chart-container">
+            <img src="data:image/png;base64,{{ plot_url }}" alt="标签分布图">
+        </div>
+
+        <div class="back-button">
+            <a href="{{ url_for('index') }}">返回查询</a>
+        </div>
+    </div>
+</body>
+</html>
