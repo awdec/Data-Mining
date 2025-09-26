@@ -8,7 +8,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>Codeforces tags Analysis</h1>
+        <h1>Codeforces Tags Analysis</h1>
 
         {% if error %}
         <div class="alert error">
@@ -16,84 +16,75 @@
         </div>
         {% endif %}
 
-        <form action="{{ url_for('analyze') }}" method="post">
-            <div class="form-group">
-                <label for="tag">选择标签：</label>
-                <select id="tag" name="tag" required>
-                    <option value="">-- 请选择 --</option>
-                    {% for tag in tags %}
-                    <option value="{{ tag }}">{{ tag }}</option>
-                    {% endfor %}
-                </select>
-            </div>
+        <div class="analysis-section">
+            <h2>标签分布分析</h2>
+            <form action="{{ url_for('analyze') }}" method="post">
+                <div class="form-group">
+                    <label for="tag">选择标签：</label>
+                    <select id="tag" name="tag" required>
+                        <option value="">-- 请选择 --</option>
+                        {% for tag in tags %}
+                        <option value="{{ tag }}">{{ tag }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-            <div class="form-group">
-                <label for="min_rating">最低分数：</label>
-                <select id="min_rating" name="min_rating" required>
-                    {% for rating in [800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3100, 3200, 3300, 3400, 3500] %}
-                    <option value="{{ rating }}">{{ rating }}</option>
-                    {% endfor %}
-                </select>
-            </div>
+                <div class="form-group">
+                    <label for="min_rating">最低分数：</label>
+                    <select id="min_rating" name="min_rating" required>
+                        {% for rating in [800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3100, 3200, 3300, 3400, 3500] %}
+                        <option value="{{ rating }}" {% if rating == 800 %}selected{% endif %}>{{ rating }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-            <div class="form-group">
-                <label for="max_rating">最高分数：</label>
-                <select id="max_rating" name="max_rating" required>
-                    {% for rating in [800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3100, 3200, 3300, 3400, 3500] %}
-                    <option value="{{ rating }}">{{ rating }}</option>
-                    {% endfor %}
-                </select>
-            </div>
+                <div class="form-group">
+                    <label for="max_rating">最高分数：</label>
+                    <select id="max_rating" name="max_rating" required>
+                        {% for rating in [800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3100, 3200, 3300, 3400, 3500] %}
+                        <option value="{{ rating }}" {% if rating == 1500 %}selected{% endif %}>{{ rating }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-            <button type="submit">分析</button>
-        </form>
-    </div>
-
-    <div class="container">
-        <h1>Codeforces 标签分析</h1>
-
-        {% if error %}
-        <div class="alert error">
-            {{ error }}
+                <button type="submit">分析标签分布</button>
+            </form>
         </div>
-        {% endif %}
 
-        <form action="{{ url_for('analyze') }}" method="post">
-            <!-- 当前的表单内容 -->
-        </form>
+        <div class="analysis-section">
+            <h2>标签占比分析</h2>
+            <form action="{{ url_for('percentage_analyze') }}" method="post">
+                <div class="form-group">
+                    <label for="tag_percentage">选择标签：</label>
+                    <select id="tag_percentage" name="tag" required>
+                        <option value="">-- 请选择 --</option>
+                        {% for tag in tags %}
+                        <option value="{{ tag }}">{{ tag }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-        <form action="{{ url_for('percentage_analyze') }}" method="post" style="margin-top: 20px;">
-            <h2>查看标签占比</h2>
-            <div class="form-group">
-                <label for="tag_percentage">选择标签：</label>
-                <select id="tag_percentage" name="tag" required>
-                    <option value="">-- 请选择 --</option>
-                    {% for tag in tags %}
-                    <option value="{{ tag }}">{{ tag }}</option>
-                    {% endfor %}
-                </select>
-            </div>
+                <div class="form-group">
+                    <label for="min_rating_percentage">最低分数：</label>
+                    <select id="min_rating_percentage" name="min_rating" required>
+                        {% for rating in [800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3100, 3200, 3300, 3400, 3500] %}
+                        <option value="{{ rating }}" {% if rating == 800 %}selected{% endif %}>{{ rating }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-            <div class="form-group">
-                <label for="min_rating_percentage">最低分数：</label>
-                <select id="min_rating_percentage" name="min_rating" required>
-                    {% for rating in [800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3100, 3200, 3300, 3400, 3500] %}
-                    <option value="{{ rating }}">{{ rating }}</option>
-                    {% endfor %}
-                </select>
-            </div>
+                <div class="form-group">
+                    <label for="max_rating_percentage">最高分数：</label>
+                    <select id="max_rating_percentage" name="max_rating" required>
+                        {% for rating in [800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3100, 3200, 3300, 3400, 3500] %}
+                        <option value="{{ rating }}" {% if rating == 1500 %}selected{% endif %}>{{ rating }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-            <div class="form-group">
-                <label for="max_rating_percentage">最高分数：</label>
-                <select id="max_rating_percentage" name="max_rating" required>
-                    {% for rating in [800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3100, 3200, 3300, 3400, 3500] %}
-                    <option value="{{ rating }}">{{ rating }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <button type="submit">查看占比</button>
-        </form>
+                <button type="submit">查看标签占比</button>
+            </form>
+        </div>
     </div>
 </body>
 </html>

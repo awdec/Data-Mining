@@ -106,3 +106,17 @@ button:hover {
     color: #c62828;
     border: 1px solid #f5cac3;
 }
+
+.analysis-section {
+    margin-bottom: 40px;
+    padding: 25px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #3498db;
+}
+
+.analysis-section h2 {
+    color: #2c3e50;
+    margin-bottom: 20px;
+    font-size: 1.3em;
+}
