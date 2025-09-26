@@ -1,4 +1,7 @@
 import os
+import pickle
+from functools import lru_cache
+from datetime import datetime, timedelta
 
 import matplotlib
 import pandas as pd
@@ -11,13 +14,54 @@ import io
 import base64
 
 # 全局中文字体设置
-plt.rcParams['font.sans-serif'] = ['SimHei']
+try:
+    plt.rcParams['font.sans-serif'] = ['SimHei', 'DejaVu Sans', 'Arial Unicode MS', 'sans-serif']
+except:
+    plt.rcParams['font.sans-serif'] = ['DejaVu Sans', 'Arial Unicode MS', 'sans-serif']
 plt.rcParams['axes.unicode_minus'] = False
 
 app = Flask(__name__)
 
+# 缓存配置
+CACHE_DIR = 'cache'
+CACHE_EXPIRY_HOURS = 24
+
+if not os.path.exists(CACHE_DIR):
+    os.makedirs(CACHE_DIR)
+
+def get_cache_path(cache_key):
+    """获取缓存文件路径"""
+    return os.path.join(CACHE_DIR, f"{cache_key}.pkl")
+
+def is_cache_valid(cache_path):
+    """检查缓存是否有效"""
+    if not os.path.exists(cache_path):
+        return False
+    
+    cache_time = datetime.fromtimestamp(os.path.getmtime(cache_path))
+    return datetime.now() - cache_time < timedelta(hours=CACHE_EXPIRY_HOURS)
+
+def save_to_cache(data, cache_key):
+    """保存数据到缓存"""
+    cache_path = get_cache_path(cache_key)
+    with open(cache_path, 'wb') as f:
+        pickle.dump(data, f)
+
+def load_from_cache(cache_key):
+    """从缓存加载数据"""
+    cache_path = get_cache_path(cache_key)
+    if is_cache_valid(cache_path):
+        with open(cache_path, 'rb') as f:
+            return pickle.load(f)
+    return None
+
+@lru_cache(maxsize=128)
+def get_unique_tags():
+    """缓存标签列表"""
+    return exploded['tag_list'].unique().tolist()
+
 # 数据预处理
-data_path = os.path.join('data', 'codeforces_problems_with_solved.csv')
+data_path = 'codeforces_problems_with_solved.csv'
 df = pd.read_csv(data_path)
 df['rating'] = pd.to_numeric(df['rating'], errors='coerce')
 
@@ -39,8 +83,8 @@ total_counts = exploded.groupby('rating_bin', observed=False).size()
 
 @app.route('/')
 def index():
-    # 获取所有唯一标签供前端选择
-    unique_tags = exploded['tag_list'].unique().tolist()
+    # 使用缓存的标签列表
+    unique_tags = get_unique_tags()
     return render_template('index.html', tags=unique_tags)
 
 
@@ -51,7 +95,15 @@ def analyze():
     selected_max_rating = int(request.form.get('max_rating'))
 
     if not selected_tag:
-        return render_template('index.html', error="请选择一个标签")
+        return render_template('index.html', error="请选择一个标签", tags=get_unique_tags())
+
+    # 生成缓存键
+    cache_key = f"analyze_{selected_tag}_{selected_min_rating}_{selected_max_rating}"
+    
+    # 尝试从缓存加载
+    cached_result = load_from_cache(cache_key)
+    if cached_result:
+        return render_template('result.html', **cached_result)
 
     # 直接使用用户选择的区间作为 selected_bin
     selected_bin = f"{selected_min_rating}-{selected_max_rating}"
@@ -67,8 +119,6 @@ def analyze():
     # 计算所选分数区间的总问题数量（基于原始数据框）
     total_bin_count = len(df[(df['rating'] >= selected_min_rating) &
                              (df['rating'] <= selected_max_rating)])
-
-    print(total_bin_count)
 
     if total_bin_count == 0:
         percentage = 0
@@ -105,11 +155,18 @@ def analyze():
     # 关闭图表以释放资源
     plt.close(fig)
 
-    return render_template('result.html',
-                           tag=selected_tag,
-                           rating_bin=selected_bin,
-                           percentage=f"{percentage:.2f}",
-                           plot_url=plot_url)
+    # 准备返回结果
+    result = {
+        'tag': selected_tag,
+        'rating_bin': selected_bin,
+        'percentage': f"{percentage:.2f}",
+        'plot_url': plot_url
+    }
+    
+    # 保存到缓存
+    save_to_cache(result, cache_key)
+
+    return render_template('result.html', **result)
 
 
 @app.route('/percentage_analyze', methods=['POST'])
@@ -119,7 +176,15 @@ def percentage_analyze():
     selected_max_rating = int(request.form.get('max_rating'))
 
     if not selected_tag:
-        return render_template('index.html', error="请选择一个标签")
+        return render_template('index.html', error="请选择一个标签", tags=get_unique_tags())
+
+    # 生成缓存键
+    cache_key = f"percentage_{selected_tag}_{selected_min_rating}_{selected_max_rating}"
+    
+    # 尝试从缓存加载
+    cached_result = load_from_cache(cache_key)
+    if cached_result:
+        return render_template('percentage_result.html', **cached_result)
 
     selected_bin = f"{selected_min_rating}-{selected_max_rating}"
 
@@ -175,12 +240,24 @@ def percentage_analyze():
 
     plt.close(fig)
 
-    return render_template('percentage_result.html',
-                           tag=selected_tag,
-                           rating_bin=selected_bin,
-                           percentage=f"{percentage:.2f}",
-                           plot_url=plot_url)
+    # 准备返回结果
+    result = {
+        'tag': selected_tag,
+        'rating_bin': selected_bin,
+        'percentage': f"{percentage:.2f}",
+        'plot_url': plot_url
+    }
+    
+    # 保存到缓存
+    save_to_cache(result, cache_key)
+
+    return render_template('percentage_result.html', **result)
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    host = os.environ.get('FLASK_HOST', '127.0.0.1')
+    port = int(os.environ.get('FLASK_PORT', 5000))
+    debug = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
+    
+    print(f"启动Codeforces标签分析应用: http://{host}:{port}")
+    app.run(host=host, port=port, debug=debug)
